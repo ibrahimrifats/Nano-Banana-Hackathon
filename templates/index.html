@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryWeaver AI - Premium AI Content Creation</title>
+    <link rel="icon" href="{{ url_for('static', filename='logo/logo.png') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.fog.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .scene-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .scene-card:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-2px);
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .mode-tab {
+            transition: all 0.3s ease;
+        }
+        
+        .mode-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        
+    </style>
+</head>
+<body>
+    <div id="vanta-bg" class="fixed top-0 left-0 w-full h-full z-[-1]"></div>
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-black border-b border-gray-700">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ url_for('static', filename='logo/logo.png') }}" alt="StoryWeaver AI Logo" class="h-10">
+
+                        <h1 class="text-2xl font-bold text-white">StoryWeaver AI</h1>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <button onclick="showProjects()" class="bg-gray-800 px-4 py-2 rounded-lg text-white hover:bg-gray-700 transition-all">
+                            <i data-feather="folder" class="w-4 h-4 inline mr-2"></i>
+                            Projects
+                        </button>
+                        <button onclick="showSettings()" class="bg-gray-800 px-4 py-2 rounded-lg text-white hover:bg-gray-700 transition-all">
+                            <i data-feather="settings" class="w-4 h-4 inline mr-2"></i>
+                            Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mode Selector -->
+        <div class="container mx-auto px-6 py-6">
+            <div class="glass-effect rounded-xl p-6 mb-6">
+                <div class="flex space-x-4 mb-6">
+                    <button onclick="setMode('story')" class="mode-tab px-6 py-3 rounded-lg font-semibold hidden">
+                        <i data-feather="book" class="w-5 h-5 inline mr-2"></i>
+                        Story Mode
+                    </button>
+                    <button onclick="setMode('ecommerce')" class="mode-tab px-6 py-3 rounded-lg font-semibold bg-white bg-opacity-20 text-white">
+                        <i data-feather="shopping-bag" class="w-5 h-5 inline mr-2"></i>
+                        E-commerce
+                    </button>
+                    <button onclick="setMode('book')" class="mode-tab px-6 py-3 rounded-lg font-semibold active">
+                        <i data-feather="file-text" class="w-5 h-5 inline mr-2"></i>
+                        Book Creation
+                    </button>
+                </div>
+                
+                <!-- Story Mode Content -->
+                <div id="story-mode" class="mode-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Input Panel -->
+                        <div class="space-y-6">
+                            <h2 class="text-2xl font-bold text-white mb-4">Create Your Story</h2>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Main Character's Name</label>
+                                    <input id="character-name" type="text" placeholder="e.g., Lily" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Character's Friend</label>
+                                    <input id="character-friend" type="text" placeholder="e.g., a brave little squirrel" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Setting</label>
+                                    <input id="setting" type="text" placeholder="e.g., an enchanted forest" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Moral/Theme</label>
+                                    <input id="moral" type="text" placeholder="e.g., being kind to others" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Number of Scenes: <span id="scene-count">3</span></label>
+                                    <input id="num-scenes" type="range" min="3" max="10" value="3" class="w-full" oninput="updateSceneCount(this.value)">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Art Style</label>
+                                    <select id="art-style" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                        <option value="watercolor">Watercolor</option>
+                                        <option value="comic">Comic Book</option>
+                                        <option value="realistic">Realistic</option>
+                                        <option value="cartoon">Cartoon</option>
+                                        <option value="oil-painting">Oil Painting</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex items-center space-x-3">
+                                    <input id="generate-audio" type="checkbox" checked class="w-5 h-5 text-purple-600">
+                                    <label class="text-white font-medium">Generate Audio Narration</label>
+                                </div>
+                            </div>
+                            
+                            <button onclick="generateStory()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all card-hover">
+                                <i data-feather="magic-wand" class="w-5 h-5 inline mr-2"></i>
+                                Weave My Story!
+                            </button>
+                        </div>
+                        
+                        <!-- Preview Panel -->
+                        <div id="story-preview" class="glass-effect rounded-xl p-6">
+                            <h3 class="text-xl font-bold text-white mb-4">Story Preview</h3>
+                            <div id="story-content" class="text-white text-opacity-80">
+                                Fill in the form and click "Weave My Story!" to begin creating your magical tale.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- E-commerce Mode Content -->
+                <div id="ecommerce-mode" class="mode-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="space-y-6 lg:col-span-1">
+                            <h2 class="text-2xl font-bold text-white mb-4">Image Generation & Enhancement</h2>
+                            
+                            <div class="border-2 border-dashed border-white border-opacity-50 rounded-xl p-8 text-center">
+                                <input type="file" id="product-upload" accept="image/*" class="hidden" onchange="handleProductUpload(event)">
+                                <button onclick="document.getElementById('product-upload').click()" class="w-full">
+                                    <i data-feather="upload" class="w-12 h-12 text-white mx-auto mb-4"></i>
+                                    <p class="text-white font-medium">Upload an Image to Modify (Optional)</p>
+                                    <p class="text-white text-opacity-70 text-sm">Or generate a new image using the prompt below</p>
+                                </button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Prompt</label>
+                                    <textarea id="generation-prompt" rows="4" placeholder="Describe the image you want to create or the modifications you want to make..." class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 resize-none border-0 focus:ring-2 focus:ring-purple-500"></textarea>
+                                </div>
+                                
+                                <button onclick="processImage()" class="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-blue-700 transition-all">
+                                    <i data-feather="zap" class="w-5 h-5 inline mr-2"></i>
+                                    Generate or Modify Image
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="ecommerce-preview" class="glass-effect rounded-xl p-6 lg:col-span-2">
+                            <h3 class="text-xl font-bold text-white mb-4">Result Preview</h3>
+                            <div id="ecommerce-content" class="text-white text-opacity-80 text-center">
+                                Upload an image or use the prompt to generate a new one.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Book Creation Mode Content -->
+                <div id="book-mode" class="mode-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Input Panel -->
+                        <div class="space-y-6">
+                            <h2 class="text-2xl font-bold text-white mb-4">Create Your Book</h2>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Book Title</label>
+                                    <input id="book-title" type="text" placeholder="e.g., The Adventures of Captain Comet" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Book Type</label>
+                                    <select id="book-type" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                        <option value="story">Story Book (10 images)</option>
+                                        <option value="educational">Educational Book (15 images)</option>
+                                        <option value="comic">Comic Book (20 images)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Main Character's Name</label>
+                                    <input id="book-character-name" type="text" placeholder="e.g., Lily" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Character's Friend</label>
+                                    <input id="book-character-friend" type="text" placeholder="e.g., a brave little squirrel" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Setting</label>
+                                    <input id="book-setting" type="text" placeholder="e.g., an enchanted forest" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Moral/Theme</label>
+                                    <input id="book-moral" type="text" placeholder="e.g., being kind to others" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-white font-medium mb-2">Art Style</label>
+                                    <select id="book-art-style" class="w-full px-4 py-3 rounded-lg bg-white bg-opacity-90 border-0 focus:ring-2 focus:ring-purple-500">
+                                        <option value="watercolor">Watercolor</option>
+                                        <option value="comic">Comic Book</option>
+                                        <option value="realistic">Realistic</option>
+                                        <option value="cartoon">Cartoon</option>
+                                        <option value="oil-painting">Oil Painting</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="flex items-center space-x-3">
+                                    <input id="book-generate-audio" type="checkbox" checked class="w-5 h-5 text-purple-600">
+                                    <label class="text-white font-medium">Generate Audio Narration</label>
+                                </div>
+                            </div>
+                            
+                            <div class="flex space-x-4">
+                                <button onclick="generateBook()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all card-hover">
+                                    <i data-feather="book-open" class="w-5 h-5 inline mr-2"></i>
+                                    Create My Book!
+                                </button>
+                                <button onclick="generateBookPDF()" class="w-full bg-gray-700 text-white font-bold py-4 px-6 rounded-lg hover:bg-gray-600 transition-all">
+                                    <i data-feather="download" class="w-5 h-5 inline mr-2"></i>
+                                    Export PDF
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Panel -->
+                        <div id="book-preview" class="glass-effect rounded-xl p-6">
+                            <h3 class="text-xl font-bold text-white mb-4">Book Preview</h3>
+                            <div id="book-content-preview" class="text-white text-opacity-80">
+                                Fill in the form and click "Create My Book!" to begin.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="glass-effect rounded-xl p-8 text-center">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <p class="text-white font-medium">Creating your magical content...</p>
+                <p id="loading-status" class="text-white text-opacity-70 text-sm mt-2">Initializing...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'story';
+        let currentProject = null;
+        let uploadedImages = {};
+        
+        // Initialize Feather Icons
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+        
+        // Mode switching
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update tab styles
+            document.querySelectorAll('.mode-tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.classList.add('bg-white', 'bg-opacity-20', 'text-white');
+            });
+            
+            event.target.classList.add('active');
+            event.target.classList.remove('bg-white', 'bg-opacity-20', 'text-white');
+            
+            // Show/hide mode content
+            document.querySelectorAll('.mode-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            document.getElementById(`${mode}-mode`).classList.remove('hidden');
+        }
+        
+        // Story generation
+        function updateSceneCount(value) {
+            document.getElementById('scene-count').textContent = value;
+        }
+        
+        async function generateStory() {
+            const data = {
+                character_name: document.getElementById('character-name').value,
+                character_friend: document.getElementById('character-friend').value,
+                setting: document.getElementById('setting').value,
+                moral: document.getElementById('moral').value,
+                num_scenes: parseInt(document.getElementById('num-scenes').value),
+                art_style: document.getElementById('art-style').value,
+                generate_audio: document.getElementById('generate-audio').checked
+            };
+            
+            if (!data.character_name || !data.character_friend || !data.setting || !data.moral) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            showLoading('Generating your story...');
+            
+            try {
+                const response = await fetch('/api/generate-story', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to generate story');
+                }
+                
+                const result = await response.json();
+                currentProject = result.project_id;
+                displayStory(result.story);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to generate story. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        function displayStory(story) {
+            const preview = document.getElementById('story-content');
+            let html = `<h2 class="text-2xl font-bold mb-4">${story.title}</h2>`;
+            
+            story.scenes.forEach((scene, index) => {
+                html += `
+                    <div class="scene-card rounded-lg p-4 mb-4">
+                        <h3 class="font-bold text-gray-800 mb-2">${scene.title}</h3>
+                        <p class="text-gray-600 mb-3">${scene.text}</p>
+                        <div class="flex items-center space-x-2 text-sm text-gray-500">
+                            <i data-feather="image" class="w-4 h-4"></i>
+                            <span>Image generated</span>
+                            <i data-feather="volume-2" class="w-4 h-4 ml-4"></i>
+                            <span>Audio generated</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            preview.innerHTML = html;
+            feather.replace();
+        }
+        
+        // E-commerce functions
+        function handleProductUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImages.product = e.target.result.split(',')[1]; // Get base64 part
+                displayUploadedImage(uploadedImages.product, 'ecommerce-content');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage() {
+            const prompt = document.getElementById('generation-prompt').value;
+
+            if (!prompt.trim()) {
+                alert('Please provide a prompt for generation or modification.');
+                return;
+            }
+
+            if (uploadedImages.product) {
+                // Modify existing image
+                showLoading('Modifying image...');
+                try {
+                    const response = await fetch('/api/modify-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            image_data: uploadedImages.product,
+                            modification_prompt: prompt
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.error) {
+                        throw new Error(result.error);
+                    }
+
+                    displayUploadedImage(result.image_data, 'ecommerce-content');
+                    uploadedImages.product = result.image_data; // Update the image data
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to modify image: ' + error.message);
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                // Generate new image
+                showLoading('Generating new image...');
+                try {
+                    const response = await fetch('/api/generate-image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            style: document.getElementById('art-style').value // Reuse art style selector
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.error) {
+                        throw new Error(result.error);
+                    }
+
+                    displayUploadedImage(result.image_data, 'ecommerce-content');
+                    uploadedImages.product = result.image_data; // Store the new image data
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to generate image: ' + error.message);
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+        
+        function displayUploadedImage(imageData, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="text-center">
+                    <img src="data:image/png;base64,${imageData}" class="w-full h-96 object-contain mx-auto rounded-lg shadow-lg mb-4">
+                    <button onclick="downloadImage('${imageData}')" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        <i data-feather="download" class="w-4 h-4 inline mr-2"></i>
+                        Download
+                    </button>
+                </div>
+            `;
+            feather.replace();
+        }
+        
+        function downloadImage(imageData) {
+            const link = document.createElement('a');
+            link.href = `data:image/png;base64,${imageData}`;
+            link.download = 'generated_image.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Book creation functions
+        async function generateBook() {
+            const data = {
+                title: document.getElementById('book-title').value,
+                type: document.getElementById('book-type').value,
+                character_name: document.getElementById('book-character-name').value,
+                character_friend: document.getElementById('book-character-friend').value,
+                setting: document.getElementById('book-setting').value,
+                moral: document.getElementById('book-moral').value,
+                art_style: document.getElementById('book-art-style').value,
+                generate_audio: document.getElementById('book-generate-audio').checked
+            };
+
+            if (!data.title || !data.character_name || !data.setting || !data.moral) {
+                alert('Please fill in all required fields for the book.');
+                return;
+            }
+
+            showLoading('Generating your book...');
+
+            try {
+                const response = await fetch('/api/create-book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to create book');
+                }
+
+                const result = await response.json();
+                currentProject = result.project_id;
+                displayBook(result.story);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create book. ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayBook(story) {
+            const preview = document.getElementById('book-content-preview');
+            let html = `<h2 class="text-2xl font-bold mb-4">${story.title}</h2>`;
+            
+            story.scenes.forEach((scene, index) => {
+                html += `
+                    <div class="scene-card rounded-lg p-4 mb-4">
+                        <h3 class="font-bold text-gray-800 mb-2">${scene.title}</h3>
+                        <p class="text-gray-600 mb-3">${scene.text}</p>
+                        ${scene.image_url ? `<img src="${scene.image_url}" alt="Scene ${index + 1}" class="w-full rounded-lg mb-2">` : ''}
+                        <div class="flex items-center space-x-2 text-sm text-gray-500">
+                            ${scene.image_url ? '<i data-feather="image" class="w-4 h-4"></i><span>Image generated</span>' : ''}
+                            <i data-feather="volume-2" class="w-4 h-4 ml-4"></i>
+                            <span>Audio generated</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            preview.innerHTML = html;
+            feather.replace();
+        }
+        
+        async function generateBookPDF() {
+            if (!currentProject) {
+                alert('Please create a book first');
+                return;
+            }
+            
+            showLoading('Generating PDF...');
+            
+            try {
+                const response = await fetch(`/api/generate-pdf/${currentProject}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'book.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to generate PDF');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to generate PDF: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        
+        
+        // Utility functions
+        function showLoading(status = 'Loading...') {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            document.getElementById('loading-status').textContent = status;
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+        
+        function showProjects() {
+            // Implement project management UI
+            alert('Project management coming soon!');
+        }
+        
+        function showSettings() {
+            // Implement settings UI
+            alert('Settings panel coming soon!');
+        }
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('StoryWeaver AI initialized');
+            
+            
+        });
+    </script>
+    <script>
+        VANTA.FOG({
+            el: "#vanta-bg",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.00,
+            minWidth: 200.00,
+            highlightColor: 0xff00ff,
+            midtoneColor: 0xff00,
+            lowlightColor: 0x0,
+            baseColor: 0x0,
+            blurFactor: 0.90,
+            speed: 1.50,
+            zoom: 0.40
+        })
+    </script>
+</body>
+</html>
